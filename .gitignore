@@ -1,0 +1,45 @@
+# ========================
+# Environment & Secrets
+# ========================
+.env
+.env.local
+.env.*.local
+
+# ========================
+# Dependencies
+# ========================
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# ========================
+# Build Outputs
+# ========================
+.next/
+out/
+dist/
+build/
+
+# ========================
+# IDE & OS
+# ========================
+.vscode/
+.idea/
+*.swp
+*.swo
+Thumbs.db
+.DS_Store
+
+# ========================
+# Docker
+# ========================
+docker-data/
+
+# ========================
+# Logs & Temp
+# ========================
+*.log
+npm-debug.log*
+uploads/

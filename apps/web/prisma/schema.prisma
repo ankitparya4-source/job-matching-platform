@@ -1,0 +1,252 @@
+// =============================================================================
+// Prisma Schema — Database Design
+// =============================================================================
+// This file defines your entire database structure. When you run
+// `npx prisma migrate dev`, Prisma reads this file and creates/updates
+// the actual PostgreSQL tables to match.
+//
+// Think of this as the "blueprint" for your database.
+// =============================================================================
+
+// ---------------------------------------------------------------------------
+// Data Source — tells Prisma which database to connect to
+// ---------------------------------------------------------------------------
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL") // Reads from .env file
+  extensions = [vector]            // pgvector for semantic search
+}
+
+// ---------------------------------------------------------------------------
+// Generator — tells Prisma to generate a TypeScript client
+// ---------------------------------------------------------------------------
+// After running `npx prisma generate`, you can do:
+//   import { PrismaClient } from '@prisma/client'
+//   const prisma = new PrismaClient()
+//   const users = await prisma.user.findMany()
+//
+// Every query is fully type-safe — TypeScript knows exactly what fields
+// exist on each model.
+// ---------------------------------------------------------------------------
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+// =============================================================================
+// MODELS (Database Tables)
+// =============================================================================
+
+// ---------------------------------------------------------------------------
+// User — The base account for both Candidates and Recruiters
+// ---------------------------------------------------------------------------
+// WHY a single User table with a role field?
+// - Simpler auth logic (one login flow for everyone)
+// - A user could potentially be both a candidate AND a recruiter
+// - Common fields (email, name, password) aren't duplicated
+// ---------------------------------------------------------------------------
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String
+  passwordHash  String    @map("password_hash")
+  role          UserRole  @default(CANDIDATE)
+  avatarUrl     String?   @map("avatar_url")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  resume        Resume?         // A candidate has one resume (1:1)
+  postedJobs    Job[]           // A recruiter posts many jobs (1:many)
+  applications  Application[]   // A candidate has many applications (1:many)
+
+  @@map("users") // Table name in PostgreSQL will be "users" (lowercase, plural)
+}
+
+enum UserRole {
+  CANDIDATE
+  RECRUITER
+  ADMIN
+}
+
+// ---------------------------------------------------------------------------
+// Resume — Parsed resume data for a candidate
+// ---------------------------------------------------------------------------
+// WHY separate from User?
+// - A resume has complex data (parsed text, skills, embeddings)
+// - Not every user has a resume (recruiters don't)
+// - Resume processing is async (uploaded → parsing → parsed)
+// - Keeps the User model clean
+// ---------------------------------------------------------------------------
+model Resume {
+  id              String        @id @default(cuid())
+  userId          String        @unique @map("user_id")
+  fileName        String        @map("file_name")
+  filePath        String        @map("file_path")
+  fileSize        Int           @map("file_size") // in bytes
+  rawText         String?       @map("raw_text")  // Extracted text from PDF
+  parsedData      Json?         @map("parsed_data") // Structured: { experience: [], education: [], skills: [] }
+  status          ResumeStatus  @default(UPLOADED)
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skills          ResumeSkill[] // Many-to-many through junction table
+
+  @@map("resumes")
+}
+
+enum ResumeStatus {
+  UPLOADED    // File received, not yet processed
+  PROCESSING  // AI service is parsing it
+  PARSED      // Successfully parsed
+  FAILED      // Parsing failed
+}
+
+// ---------------------------------------------------------------------------
+// Skill — A normalized skill entity (e.g., "Python", "React", "SQL")
+// ---------------------------------------------------------------------------
+// WHY a separate Skill table instead of just storing skills as JSON?
+// - Normalization: "python", "Python", "PYTHON" all map to one Skill
+// - Enables skill-based search and filtering
+// - Skills can be categorized (language, framework, tool, soft skill)
+// - Reusable across resumes AND job requirements
+// ---------------------------------------------------------------------------
+model Skill {
+  id          String       @id @default(cuid())
+  name        String       @unique // "Python", "React", "Project Management"
+  category    String?      // "language", "framework", "tool", "soft_skill"
+  createdAt   DateTime     @default(now()) @map("created_at")
+
+  // Relations
+  resumes     ResumeSkill[]
+  jobs        JobSkill[]
+
+  @@map("skills")
+}
+
+// ---------------------------------------------------------------------------
+// ResumeSkill — Junction table linking Resumes to Skills (many-to-many)
+// ---------------------------------------------------------------------------
+// WHY a junction table instead of Prisma's implicit many-to-many?
+// - We need extra data: confidence score (how confident the AI is)
+// - yearsOfExperience could be extracted from the resume
+// - Explicit junction tables are the professional pattern
+// ---------------------------------------------------------------------------
+model ResumeSkill {
+  id              String   @id @default(cuid())
+  resumeId        String   @map("resume_id")
+  skillId         String   @map("skill_id")
+  confidence      Float    @default(1.0) // AI confidence: 0.0 to 1.0
+  yearsExperience Float?   @map("years_experience")
+
+  // Relations
+  resume          Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  skill           Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([resumeId, skillId]) // A resume can't have the same skill twice
+  @@map("resume_skills")
+}
+
+// ---------------------------------------------------------------------------
+// Job — A job listing posted by a recruiter
+// ---------------------------------------------------------------------------
+model Job {
+  id              String        @id @default(cuid())
+  recruiterId     String        @map("recruiter_id")
+  title           String        // "Senior Full Stack Developer"
+  company         String        // "TechCorp Inc."
+  description     String        // Full job description (used for embeddings)
+  location        String?       // "Remote", "New York, NY", "Bangalore"
+  locationType    LocationType  @default(ONSITE) @map("location_type")
+  salaryMin       Int?          @map("salary_min")
+  salaryMax       Int?          @map("salary_max")
+  experienceLevel ExperienceLevel @default(MID) @map("experience_level")
+  status          JobStatus     @default(OPEN)
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  recruiter       User          @relation(fields: [recruiterId], references: [id], onDelete: Cascade)
+  skills          JobSkill[]    // Required skills for this job
+  applications    Application[]
+
+  @@map("jobs")
+}
+
+enum LocationType {
+  REMOTE
+  ONSITE
+  HYBRID
+}
+
+enum ExperienceLevel {
+  INTERN
+  JUNIOR
+  MID
+  SENIOR
+  LEAD
+}
+
+enum JobStatus {
+  DRAFT     // Not yet published
+  OPEN      // Accepting applications
+  CLOSED    // No longer accepting
+  FILLED    // Position has been filled
+}
+
+// ---------------------------------------------------------------------------
+// JobSkill — Skills required/preferred for a job (many-to-many)
+// ---------------------------------------------------------------------------
+model JobSkill {
+  id          String   @id @default(cuid())
+  jobId       String   @map("job_id")
+  skillId     String   @map("skill_id")
+  required    Boolean  @default(true) // Required vs nice-to-have
+
+  // Relations
+  job         Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  skill       Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, skillId])
+  @@map("job_skills")
+}
+
+// ---------------------------------------------------------------------------
+// Application — A candidate applying to a job
+// ---------------------------------------------------------------------------
+// This is the core of the "Application Tracking" feature.
+// The status field tracks the hiring pipeline:
+//   APPLIED → REVIEWED → SHORTLISTED → INTERVIEW → OFFERED → HIRED
+//                                                         → REJECTED (at any stage)
+// ---------------------------------------------------------------------------
+model Application {
+  id            String            @id @default(cuid())
+  candidateId   String            @map("candidate_id")
+  jobId         String            @map("job_id")
+  status        ApplicationStatus @default(APPLIED)
+  coverLetter   String?           @map("cover_letter")
+  matchScore    Float?            @map("match_score")  // AI-calculated: 0-100
+  matchDetails  Json?             @map("match_details") // { skillOverlap: 80, semanticScore: 75, ... }
+  appliedAt     DateTime          @default(now()) @map("applied_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  candidate     User              @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  job           Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([candidateId, jobId]) // Can't apply to the same job twice
+  @@map("applications")
+}
+
+enum ApplicationStatus {
+  APPLIED
+  REVIEWED
+  SHORTLISTED
+  INTERVIEW
+  OFFERED
+  HIRED
+  REJECTED
+  WITHDRAWN
+}
