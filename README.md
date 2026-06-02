@@ -1,119 +1,79 @@
-# 🎯 Job Matching Platform
+# Job Matching Platform
 
-An AI-powered hiring system that uses **semantic search** and **NLP** to intelligently match candidates with relevant job opportunities.
+AI-powered hiring platform that connects candidates with relevant jobs using semantic search and NLP. Candidates upload resumes, the system extracts skills and generates vector embeddings, then matches them against job descriptions using cosine similarity — going beyond simple keyword matching.
 
-## ✨ Features
+## Architecture
 
-- **AI Resume Parsing** — Upload a PDF resume and automatically extract skills, experience, and education using NLP (spaCy)
-- **Semantic Job Matching** — Go beyond keyword matching with vector embeddings that understand meaning (e.g., "Python developer" matches "Software Engineer with Python experience")
-- **Recruiter Dashboard** — Post jobs, review ranked candidates, and manage the hiring pipeline
-- **Application Tracking** — Full workflow from Applied → Reviewed → Interview → Offer/Rejected
-- **Real-Time Notifications** — Instant updates when application status changes
+The platform is split into two services:
 
-## 🏗️ Architecture
+- **Web app** (Next.js 15, App Router) — handles the frontend, API routes, auth, and database access via Prisma
+- **AI service** (Python, FastAPI) — handles resume parsing, skill extraction with spaCy, and embedding generation with sentence-transformers
+
+Both services share a PostgreSQL 16 database with the pgvector extension for storing and querying vector embeddings.
 
 ```
-┌─────────────────────┐     ┌──────────────────────┐
-│   Next.js 15 App    │────▶│  Python AI Service   │
-│   (App Router)      │     │  (FastAPI)           │
-│                     │     │                      │
-│  • Frontend UI      │     │  • Resume parsing    │
-│  • API Routes       │     │  • Skill extraction  │
-│  • Auth (NextAuth)  │     │  • Embeddings (NLP)  │
-│  • Prisma ORM       │     │  • Job matching      │
-└────────┬────────────┘     └──────────┬───────────┘
-         │                             │
-         └──────────┬──────────────────┘
-                    ▼
-         ┌────────────────────┐
-         │  PostgreSQL 16     │
-         │  + pgvector        │
-         │                    │
-         │  • User data       │
-         │  • Job listings    │
-         │  • Applications    │
-         │  • Vector embeddings│
-         └────────────────────┘
+apps/web          →  Next.js 15 + Prisma + NextAuth
+apps/ai-service   →  FastAPI + spaCy + sentence-transformers
+docker-compose    →  PostgreSQL 16 + pgvector
 ```
 
-## 🛠️ Tech Stack
+## Tech Stack
 
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| Frontend | Next.js 15 (App Router) | SSR, routing, React UI |
-| Backend | Next.js API Routes | REST API endpoints |
-| AI/ML | Python FastAPI | Resume parsing, embeddings, matching |
-| Database | PostgreSQL 16 + pgvector | Relational data + vector search |
-| ORM | Prisma | Type-safe database queries |
-| Auth | NextAuth.js v5 | Authentication & authorization |
-| NLP | spaCy + sentence-transformers | Text processing & embeddings |
+| Layer | Tech |
+|-------|------|
+| Frontend | Next.js 15 (App Router), TypeScript |
+| Auth | NextAuth.js v5, bcrypt |
+| Database | PostgreSQL 16, pgvector, Prisma ORM |
+| AI/ML | FastAPI, spaCy, sentence-transformers |
+| Infra | Docker Compose |
 
-## 🚀 Getting Started
+## Setup
 
-### Prerequisites
-
-- Node.js 20+
-- Python 3.10+
-- Docker & Docker Compose
-
-### Quick Start
+Prerequisites: Node.js 20+, Python 3.10+, Docker
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/YOUR_USERNAME/job-matching-platform.git
+# clone and configure
+git clone https://github.com/ankitparya4-source/job-matching-platform.git
 cd job-matching-platform
-
-# 2. Copy environment variables
 cp .env.example .env
 
-# 3. Start the database
+# start database
 docker compose up -d
 
-# 4. Set up the web app
+# web app
 cd apps/web
 npm install
 npx prisma migrate dev
 npm run dev
 
-# 5. Set up the AI service (in a new terminal)
+# ai service (separate terminal)
 cd apps/ai-service
 python -m venv venv
-venv\Scripts\activate        # Windows
+venv\Scripts\activate
 pip install -r requirements.txt
 python -m spacy download en_core_web_sm
 uvicorn app.main:app --reload --port 8000
 ```
 
-### Access the app
+Web app runs at `localhost:3000`, AI service docs at `localhost:8000/docs`.
 
-- **Web App**: http://localhost:3000
-- **AI Service Docs**: http://localhost:8000/docs
-- **Database**: localhost:5432
-
-## 📁 Project Structure
+## Project Structure
 
 ```
 job-matching-platform/
 ├── apps/
-│   ├── web/                    # Next.js frontend + API
-│   │   ├── src/
-│   │   │   ├── app/            # App Router pages & API routes
-│   │   │   ├── components/     # Reusable React components
-│   │   │   └── lib/            # Utilities & shared logic
-│   │   └── prisma/
-│   │       └── schema.prisma   # Database schema
-│   └── ai-service/             # Python FastAPI microservice
-│       ├── app/
-│       │   ├── main.py         # FastAPI entry point
-│       │   ├── routers/        # API route handlers
-│       │   ├── services/       # Business logic
-│       │   └── models/         # Data models
-│       └── requirements.txt
-├── docker-compose.yml          # Local dev environment
-├── .env.example                # Environment variable template
-└── README.md
+│   ├── web/                 # Next.js frontend + API
+│   │   ├── src/app/         # Pages and API routes
+│   │   ├── src/lib/         # Auth config, Prisma client
+│   │   └── prisma/          # Schema and migrations
+│   └── ai-service/          # Python ML microservice
+│       ├── app/routers/     # API endpoints
+│       ├── app/services/    # Business logic
+│       └── app/models/      # Data models
+├── docker-compose.yml
+└── .env.example
 ```
 
-## 📄 License
+## License
 
 MIT
