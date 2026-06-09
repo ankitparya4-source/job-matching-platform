@@ -1,31 +1,15 @@
-# =============================================================================
-# Docker Compose — Local Development Environment
-# =============================================================================
-# Usage:
-#   docker compose up -d        → Start all services in background
-#   docker compose down         → Stop all services
-#   docker compose logs -f db   → Watch database logs
-#   docker compose ps           → See running services
-# =============================================================================
-
 services:
-  # ---------------------------------------------------------------------------
-  # PostgreSQL Database with pgvector extension
-  # ---------------------------------------------------------------------------
-  # pgvector lets us store and search vector embeddings directly in Postgres.
-  # This is what powers our semantic job matching — no need for Elasticsearch.
   db:
     image: pgvector/pgvector:pg16
     container_name: jobmatch-db
     restart: unless-stopped
     ports:
-      - "5433:5432"  # Using 5433 because local PostgreSQL is already on 5432
+      - "5433:5432"
     environment:
       POSTGRES_USER: jobmatch
       POSTGRES_PASSWORD: jobmatch_dev_2024
       POSTGRES_DB: jobmatch_db
     volumes:
-      # Persist data across container restarts
       - pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U jobmatch -d jobmatch_db"]
@@ -33,6 +17,5 @@ services:
       timeout: 5s
       retries: 5
 
-# Named volumes — Docker manages the storage location
 volumes:
   pgdata:
