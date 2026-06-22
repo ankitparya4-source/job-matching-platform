@@ -1,0 +1,108 @@
+"use server";
+
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { revalidatePath } from "next/cache";
+
+export async function applyToJob(jobId: string, coverLetter?: string) {
+  const session = await auth();
+  if (!session?.user || session.user.role !== "CANDIDATE") {
+    throw new Error("Only candidates can apply to jobs");
+  }
+
+  const job = await prisma.job.findUnique({ where: { id: jobId } });
+  if (!job || job.status !== "OPEN") {
+    throw new Error("Job is no longer available");
+  }
+
+  const existing = await prisma.application.findUnique({
+    where: {
+      candidateId_jobId: {
+        candidateId: session.user.id,
+        jobId,
+      },
+    },
+  });
+
+  if (existing) {
+    throw new Error("You have already applied to this job");
+  }
+
+  await prisma.application.create({
+    data: {
+      candidateId: session.user.id,
+      jobId,
+      coverLetter: coverLetter || null,
+      status: "APPLIED",
+    },
+  });
+
+  revalidatePath(`/jobs/${jobId}`);
+  revalidatePath("/applications");
+  revalidatePath("/dashboard");
+}
+
+export async function getCandidateApplications() {
+  const session = await auth();
+  if (!session?.user) throw new Error("Unauthorized");
+
+  return prisma.application.findMany({
+    where: { candidateId: session.user.id },
+    include: {
+      job: {
+        include: {
+          recruiter: { select: { name: true } },
+          skills: { include: { skill: true } },
+        },
+      },
+    },
+    orderBy: { appliedAt: "desc" },
+  });
+}
+
+export async function getJobApplicants(jobId: string) {
+  const session = await auth();
+  if (!session?.user || session.user.role !== "RECRUITER") {
+    throw new Error("Unauthorized");
+  }
+
+  const job = await prisma.job.findUnique({ where: { id: jobId } });
+  if (!job || job.recruiterId !== session.user.id) {
+    throw new Error("Job not found or unauthorized");
+  }
+
+  return prisma.application.findMany({
+    where: { jobId },
+    include: {
+      candidate: { select: { id: true, name: true, email: true } },
+    },
+    orderBy: { appliedAt: "desc" },
+  });
+}
+
+export async function updateApplicationStatus(
+  applicationId: string,
+  status: string
+) {
+  const session = await auth();
+  if (!session?.user || session.user.role !== "RECRUITER") {
+    throw new Error("Unauthorized");
+  }
+
+  const application = await prisma.application.findUnique({
+    where: { id: applicationId },
+    include: { job: true },
+  });
+
+  if (!application || application.job.recruiterId !== session.user.id) {
+    throw new Error("Application not found or unauthorized");
+  }
+
+  await prisma.application.update({
+    where: { id: applicationId },
+    data: { status: status as any },
+  });
+
+  revalidatePath(`/applicants/${application.jobId}`);
+  revalidatePath("/dashboard");
+}
