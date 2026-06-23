@@ -2,6 +2,7 @@
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
@@ -41,7 +42,7 @@ export async function uploadResume(formData: FormData) {
       fileSize: file.size,
       status: "PROCESSING",
       rawText: null,
-      parsedData: null,
+      parsedData: Prisma.JsonNull,
     },
     create: {
       userId: session.user.id,

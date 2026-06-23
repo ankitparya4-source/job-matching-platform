@@ -20,7 +20,7 @@ export async function applyToJob(jobId: string, coverLetter?: string) {
 
   const existing = await prisma.application.findUnique({
     where: {
-      candidateId_jobId: {
+      jobId_candidateId: {
         candidateId: session.user.id,
         jobId,
       },
@@ -82,7 +82,7 @@ export async function getCandidateApplications() {
         },
       },
     },
-    orderBy: { appliedAt: "desc" },
+    orderBy: { createdAt: "desc" },
   });
 }
 
@@ -102,7 +102,7 @@ export async function getJobApplicants(jobId: string) {
     include: {
       candidate: { select: { id: true, name: true, email: true } },
     },
-    orderBy: { appliedAt: "desc" },
+    orderBy: { createdAt: "desc" },
   });
 }
 

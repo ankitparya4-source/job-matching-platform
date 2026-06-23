@@ -51,7 +51,7 @@ export default async function ApplicationsPage() {
               </p>
               <div className="job-card-meta">
                 {app.job.location && <span>{app.job.location}</span>}
-                <span>Applied {new Date(app.appliedAt).toLocaleDateString()}</span>
+                <span>Applied {new Date(app.createdAt).toLocaleDateString()}</span>
               </div>
               {app.coverLetter && (
                 <p className="job-card-excerpt">{app.coverLetter.slice(0, 120)}…</p>
