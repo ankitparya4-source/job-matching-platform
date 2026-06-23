@@ -664,7 +664,10 @@ a:hover {
 .status-shortlisted { background: rgba(74,124,89,0.1); color: var(--success); }
 .status-interview { background: rgba(196,112,75,0.1); color: var(--terracotta); }
 .status-offered { background: rgba(74,124,89,0.15); color: var(--success); }
-.status-hired { background: rgba(74,124,89,0.2); color: #2d6a3e; }
+.status-hired {
+  background: var(--success-bg);
+  color: var(--success);
+}
 .status-rejected { background: rgba(181,74,74,0.08); color: var(--error); }
 .status-withdrawn { background: var(--cream-dark); color: var(--warm-gray); }
 

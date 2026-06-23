@@ -28,7 +28,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         });
 
         if (!user) {
-          throw new Error("No account found with this email");
+          throw new Error("Invalid email or password");
         }
 
         const isPasswordValid = await compare(
@@ -37,7 +37,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         );
 
         if (!isPasswordValid) {
-          throw new Error("Invalid password");
+          throw new Error("Invalid email or password");
         }
 
         return {

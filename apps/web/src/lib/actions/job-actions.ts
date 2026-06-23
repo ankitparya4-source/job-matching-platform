@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { LocationType, ExperienceLevel, JobStatus, Prisma } from "@prisma/client";
 
 export async function createJob(formData: FormData) {
   const session = await auth();
@@ -32,10 +33,10 @@ export async function createJob(formData: FormData) {
       company,
       description,
       location: location || null,
-      locationType: (locationType as any) || "ONSITE",
+      locationType: (locationType as LocationType) || "ONSITE",
       salaryMin,
       salaryMax,
-      experienceLevel: (experienceLevel as any) || "MID",
+      experienceLevel: (experienceLevel as ExperienceLevel) || "MID",
       status: "OPEN",
     },
   });
@@ -62,6 +63,11 @@ export async function createJob(formData: FormData) {
 }
 
 export async function updateJobStatus(jobId: string, status: string) {
+  const validStatuses: JobStatus[] = ["DRAFT", "OPEN", "CLOSED", "FILLED"];
+  if (!validStatuses.includes(status as JobStatus)) {
+    throw new Error("Invalid status");
+  }
+
   const session = await auth();
   if (!session?.user || session.user.role !== "RECRUITER") {
     throw new Error("Unauthorized");
@@ -74,7 +80,7 @@ export async function updateJobStatus(jobId: string, status: string) {
 
   await prisma.job.update({
     where: { id: jobId },
-    data: { status: status as any },
+    data: { status: status as JobStatus },
   });
 
   revalidatePath("/jobs");
@@ -86,7 +92,7 @@ export async function getJobs(filters?: {
   locationType?: string;
   experienceLevel?: string;
 }) {
-  const where: any = { status: "OPEN" };
+  const where: Prisma.JobWhereInput = { status: "OPEN" };
 
   if (filters?.search) {
     where.OR = [

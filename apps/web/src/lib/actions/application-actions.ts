@@ -3,6 +3,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { ApplicationStatus } from "@prisma/client";
 
 export async function applyToJob(jobId: string, coverLetter?: string) {
   const session = await auth();
@@ -84,6 +85,14 @@ export async function updateApplicationStatus(
   applicationId: string,
   status: string
 ) {
+  const validStatuses: ApplicationStatus[] = [
+    "APPLIED", "REVIEWED", "SHORTLISTED", "INTERVIEW",
+    "OFFERED", "HIRED", "REJECTED", "WITHDRAWN"
+  ];
+  if (!validStatuses.includes(status as ApplicationStatus)) {
+    throw new Error("Invalid status");
+  }
+
   const session = await auth();
   if (!session?.user || session.user.role !== "RECRUITER") {
     throw new Error("Unauthorized");
@@ -100,7 +109,7 @@ export async function updateApplicationStatus(
 
   await prisma.application.update({
     where: { id: applicationId },
-    data: { status: status as any },
+    data: { status: status as ApplicationStatus },
   });
 
   revalidatePath(`/applicants/${application.jobId}`);
