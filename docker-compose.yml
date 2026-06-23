@@ -17,5 +17,35 @@ services:
       timeout: 5s
       retries: 5
 
+  ai-service:
+    build: ./apps/ai-service
+    container_name: jobmatch-ai
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build: ./apps/web
+    container_name: jobmatch-web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://jobmatch:jobmatch_dev_2024@db:5432/jobmatch_db
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
+      - AUTH_TRUST_HOST=true
+      - AI_SERVICE_URL=http://ai-service:8000
+    depends_on:
+      db:
+        condition: service_healthy
+      ai-service:
+        condition: service_started
+
 volumes:
   pgdata:

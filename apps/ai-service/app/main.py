@@ -1,6 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import resume, matching
+from dotenv import load_dotenv
+import os
+from app.routers import resume, matching, generate
+
+load_dotenv()
 
 app = FastAPI(
     title="JobMatch AI Service",
@@ -12,7 +16,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -20,6 +24,7 @@ app.add_middleware(
 
 app.include_router(resume.router)
 app.include_router(matching.router)
+app.include_router(generate.router)
 
 
 @app.get("/health")

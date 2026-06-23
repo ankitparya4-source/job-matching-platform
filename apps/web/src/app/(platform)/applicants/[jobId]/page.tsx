@@ -3,6 +3,8 @@ import { getJobById } from "@/lib/actions/job-actions";
 import { auth } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { StatusUpdater } from "./status-updater";
+import { InterviewScheduler } from "./interview-scheduler";
+import { MessageButton } from "./message-button";
 
 export default async function ApplicantsPage({
   params,
@@ -120,7 +122,7 @@ export default async function ApplicantsPage({
                   )}
 
                   <div className="applicant-meta">
-                    <span>Applied {new Date(app.appliedAt).toLocaleDateString()}</span>
+                    <span>Applied {new Date(app.createdAt).toLocaleDateString()}</span>
                     {app.coverLetter && (
                       <span className="applicant-has-cover">Cover letter attached</span>
                     )}
@@ -130,7 +132,16 @@ export default async function ApplicantsPage({
                     <p className="applicant-cover">{app.coverLetter}</p>
                   )}
                 </div>
-                <StatusUpdater applicationId={app.id} currentStatus={app.status} />
+                <div className="applicant-actions" style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                  <StatusUpdater applicationId={app.id} currentStatus={app.status} />
+                  {app.status === "INTERVIEW" && (
+                    <InterviewScheduler
+                      applicationId={app.id}
+                      candidateName={app.candidate.name}
+                    />
+                  )}
+                  <MessageButton applicationId={app.id} />
+                </div>
               </div>
             );
           })}

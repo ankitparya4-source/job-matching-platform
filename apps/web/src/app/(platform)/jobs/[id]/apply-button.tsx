@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { applyToJob } from "@/lib/actions/application-actions";
+import { generateCoverLetter } from "@/lib/actions/generate-actions";
 
 export function ApplyButton({ jobId }: { jobId: string }) {
   const [showForm, setShowForm] = useState(false);
@@ -9,6 +10,20 @@ export function ApplyButton({ jobId }: { jobId: string }) {
   const [loading, setLoading] = useState(false);
   const [applied, setApplied] = useState(false);
   const [error, setError] = useState("");
+  const [generating, setGenerating] = useState(false);
+
+  const handleGenerate = async () => {
+    setGenerating(true);
+    setError("");
+    try {
+      const generated = await generateCoverLetter(jobId);
+      setCoverLetter(generated);
+    } catch (err: any) {
+      setError(err.message || "Failed to generate");
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   const handleApply = async () => {
     setLoading(true);
@@ -46,6 +61,16 @@ export function ApplyButton({ jobId }: { jobId: string }) {
           {error && <div className="auth-alert auth-alert--error">{error}</div>}
           <div className="form-field">
             <label htmlFor="coverLetter">Cover Letter (optional)</label>
+            <div className="generate-bar">
+              <button
+                type="button"
+                onClick={handleGenerate}
+                disabled={generating}
+                className="btn-generate"
+              >
+                {generating ? "Generating…" : "✦ Generate with AI"}
+              </button>
+            </div>
             <textarea
               id="coverLetter"
               value={coverLetter}

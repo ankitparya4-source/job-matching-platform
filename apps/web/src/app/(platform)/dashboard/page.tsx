@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getRecruiterJobs } from "@/lib/actions/job-actions";
 import { getCandidateApplications } from "@/lib/actions/application-actions";
+import { getUpcomingInterviews } from "@/lib/actions/interview-actions";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 
@@ -22,6 +23,7 @@ async function RecruiterDashboard() {
   if (!session?.user) return null;
 
   const jobs = await getRecruiterJobs();
+  const interviews = await getUpcomingInterviews();
 
   const totalJobs = jobs.length;
   const openJobs = jobs.filter((j) => j.status === "OPEN").length;
@@ -77,6 +79,50 @@ async function RecruiterDashboard() {
           <div className="pipeline-segment pipeline-hired">
             <span className="pipeline-count">{pipeline.hired}</span>
             <span className="pipeline-label">Hired</span>
+          </div>
+        </div>
+        </div>
+      )}
+
+      {interviews.length > 0 && (
+        <div className="section">
+          <h2 className="section-title">Upcoming Interviews</h2>
+          <div className="interview-list">
+            {interviews.map((interview: any) => (
+              <div key={interview.id} className="interview-card">
+                <div className="interview-card-header">
+                  <h3 className="interview-card-title">
+                    {interview.application.job.title}
+                  </h3>
+                  <span className="interview-card-company">
+                    {interview.application.candidate.name}
+                  </span>
+                </div>
+                <div className="interview-card-meta">
+                  <span className="interview-card-date">
+                    {new Date(interview.scheduledAt).toLocaleDateString("en-IN", {
+                      weekday: "short",
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                  <span>{interview.durationMinutes} min</span>
+                </div>
+                {interview.meetingLink && (
+                  <a
+                    href={interview.meetingLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-primary btn-sm"
+                    style={{ display: "inline-block", marginTop: "0.5rem" }}
+                  >
+                    Join Meeting
+                  </a>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -136,7 +182,7 @@ async function RecruiterDashboard() {
 async function CandidateDashboard() {
   const applications = await getCandidateApplications();
   const recommendedJobs = await getRecommendedJobs();
-
+  const interviews = await getUpcomingInterviews();
 
   const total = applications.length;
   const inReview = applications.filter((a) =>
@@ -162,6 +208,49 @@ async function CandidateDashboard() {
           <span className="stat-label">Offers</span>
         </div>
       </div>
+
+      {interviews.length > 0 && (
+        <div className="section">
+          <h2 className="section-title">Upcoming Interviews</h2>
+          <div className="interview-list">
+            {interviews.map((interview: any) => (
+              <div key={interview.id} className="interview-card">
+                <div className="interview-card-header">
+                  <h3 className="interview-card-title">
+                    {interview.application.job.title}
+                  </h3>
+                  <span className="interview-card-company">
+                    {interview.application.job.company}
+                  </span>
+                </div>
+                <div className="interview-card-meta">
+                  <span className="interview-card-date">
+                    {new Date(interview.scheduledAt).toLocaleDateString("en-IN", {
+                      weekday: "short",
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                  <span>{interview.durationMinutes} min</span>
+                </div>
+                {interview.meetingLink && (
+                  <a
+                    href={interview.meetingLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-primary btn-sm"
+                    style={{ display: "inline-block", marginTop: "0.5rem" }}
+                  >
+                    Join Meeting
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {recommendedJobs.length > 0 && (
         <div className="section">
@@ -249,7 +338,7 @@ async function CandidateDashboard() {
                 <p className="job-card-company">{app.job.company}</p>
                 <div className="job-card-meta">
                   {app.job.location && <span>{app.job.location}</span>}
-                  <span>Applied {new Date(app.appliedAt).toLocaleDateString()}</span>
+                  <span>Applied {new Date(app.createdAt).toLocaleDateString()}</span>
                 </div>
               </div>
             ))}

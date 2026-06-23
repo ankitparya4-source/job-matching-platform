@@ -66,6 +66,20 @@ function Filters() {
           <option value="SENIOR">Senior</option>
           <option value="LEAD">Lead</option>
         </select>
+
+        <select
+          className="filter-select"
+          defaultValue={searchParams.get("minSalary") || ""}
+          onChange={(e) => applyFilters("minSalary", e.target.value)}
+        >
+          <option value="">Any Salary</option>
+          <option value="300000">₹3L+</option>
+          <option value="500000">₹5L+</option>
+          <option value="1000000">₹10L+</option>
+          <option value="1500000">₹15L+</option>
+          <option value="2500000">₹25L+</option>
+          <option value="5000000">₹50L+</option>
+        </select>
       </div>
     </div>
   );

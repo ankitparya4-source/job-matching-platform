@@ -6,7 +6,7 @@ import { JobFilters } from "./job-filters";
 export default async function JobsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ search?: string; locationType?: string; experienceLevel?: string }>;
+  searchParams: Promise<{ search?: string; locationType?: string; experienceLevel?: string; minSalary?: string }>;
 }) {
   const session = await auth();
   const params = await searchParams;
@@ -18,6 +18,7 @@ export default async function JobsPage({
         search: params.search,
         locationType: params.locationType,
         experienceLevel: params.experienceLevel,
+        minSalary: params.minSalary ? parseInt(params.minSalary) : undefined,
       });
 
   return (

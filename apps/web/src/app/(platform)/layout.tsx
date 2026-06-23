@@ -1,6 +1,8 @@
 import { auth, signOut } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { getNotifications, getUnreadCount } from "@/lib/actions/notification-actions";
+import { NotificationBell } from "./notification-bell";
 
 export default async function PlatformLayout({
   children,
@@ -19,6 +21,10 @@ export default async function PlatformLayout({
           <Link href="/dashboard" className="sidebar-logo">
             JobMatch
           </Link>
+          <NotificationBell
+            notifications={await getNotifications()}
+            unreadCount={await getUnreadCount()}
+          />
         </div>
 
         <nav className="sidebar-nav">
@@ -42,6 +48,15 @@ export default async function PlatformLayout({
             </Link>
             </>
           )}
+          <Link href="/analytics" className="sidebar-link">
+            Analytics
+          </Link>
+          <Link href="/messages" className="sidebar-link">
+            Messages
+          </Link>
+          <Link href="/settings" className="sidebar-link">
+            Settings
+          </Link>
         </nav>
 
         <div className="sidebar-footer">

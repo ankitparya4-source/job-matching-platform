@@ -91,6 +91,7 @@ export async function getJobs(filters?: {
   search?: string;
   locationType?: string;
   experienceLevel?: string;
+  minSalary?: number;
 }) {
   const where: Prisma.JobWhereInput = { status: "OPEN" };
 
@@ -103,11 +104,15 @@ export async function getJobs(filters?: {
   }
 
   if (filters?.locationType) {
-    where.locationType = filters.locationType;
+    where.locationType = filters.locationType as LocationType;
   }
 
   if (filters?.experienceLevel) {
-    where.experienceLevel = filters.experienceLevel;
+    where.experienceLevel = filters.experienceLevel as ExperienceLevel;
+  }
+
+  if (filters?.minSalary) {
+    where.salaryMax = { gte: filters.minSalary };
   }
 
   return prisma.job.findMany({

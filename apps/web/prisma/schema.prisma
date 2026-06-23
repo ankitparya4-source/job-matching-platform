@@ -28,6 +28,8 @@ model User {
   resume        Resume?
   postedJobs    Job[]
   applications  Application[]
+  notifications Notification[]
+  sentMessages  Message[]
 
   @@map("users")
 }
@@ -153,13 +155,15 @@ model Application {
   coverLetter   String?           @map("cover_letter")
   matchScore    Float?            @map("match_score")
   matchDetails  Json?             @map("match_details")
-  appliedAt     DateTime          @default(now()) @map("applied_at")
+  createdAt     DateTime          @default(now()) @map("created_at")
   updatedAt     DateTime          @updatedAt @map("updated_at")
 
-  candidate     User              @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   job           Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  candidate     User              @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  interviews    Interview[]
+  conversation  Conversation?
 
-  @@unique([candidateId, jobId])
+  @@unique([jobId, candidateId])
   @@map("applications")
 }
 
@@ -172,4 +176,68 @@ enum ApplicationStatus {
   HIRED
   REJECTED
   WITHDRAWN
+}
+
+model Notification {
+  id          String    @id @default(cuid())
+  userId      String    @map("user_id")
+  type        String
+  title       String
+  message     String
+  link        String?
+  read        Boolean   @default(false)
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model Interview {
+  id              String    @id @default(cuid())
+  applicationId   String    @map("application_id")
+  scheduledAt     DateTime  @map("scheduled_at")
+  durationMinutes Int       @default(60) @map("duration_minutes")
+  meetingLink     String?   @map("meeting_link")
+  notes           String?
+  status          InterviewStatus @default(SCHEDULED)
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  application     Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@map("interviews")
+}
+
+enum InterviewStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+  RESCHEDULED
+}
+
+model Conversation {
+  id              String    @id @default(cuid())
+  applicationId   String    @unique @map("application_id")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  application     Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  messages        Message[]
+
+  @@map("conversations")
+}
+
+model Message {
+  id              String    @id @default(cuid())
+  conversationId  String    @map("conversation_id")
+  senderId        String    @map("sender_id")
+  content         String
+  read            Boolean   @default(false)
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender          User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
 }

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { ApplicationStatus } from "@prisma/client";
 import { getJobMatchScore } from "./matching-actions";
+import { createNotification } from "./notification-actions";
 
 export async function applyToJob(jobId: string, coverLetter?: string) {
   const session = await auth();
@@ -53,6 +54,14 @@ export async function applyToJob(jobId: string, coverLetter?: string) {
       matchDetails,
     },
   });
+
+  await createNotification(
+    job.recruiterId,
+    "NEW_APPLICATION",
+    "New Application",
+    `${session.user.name} applied to ${job.title}`,
+    `/applicants/${jobId}`
+  );
 
   revalidatePath(`/jobs/${jobId}`);
   revalidatePath("/applications");
@@ -127,6 +136,24 @@ export async function updateApplicationStatus(
     where: { id: applicationId },
     data: { status: status as ApplicationStatus },
   });
+
+  const statusLabels: Record<string, string> = {
+    REVIEWED: "is being reviewed",
+    SHORTLISTED: "has been shortlisted",
+    INTERVIEW: "moved to interview stage",
+    OFFERED: "received an offer",
+    HIRED: "— congratulations, you're hired",
+    REJECTED: "was not selected",
+  };
+
+  const label = statusLabels[status] || "has been updated";
+  await createNotification(
+    application.candidateId,
+    "STATUS_CHANGE",
+    "Application Update",
+    `Your application for ${application.job.title} ${label}`,
+    `/applications`
+  );
 
   revalidatePath(`/applicants/${application.jobId}`);
   revalidatePath("/dashboard");
