@@ -34,9 +34,14 @@ export default async function PlatformLayout({
               Post a Job
             </Link>
           ) : (
+            <>
             <Link href="/applications" className="sidebar-link">
               My Applications
             </Link>
+            <Link href="/resume" className="sidebar-link">
+              My Resume
+            </Link>
+            </>
           )}
         </nav>
 

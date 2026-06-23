@@ -1,3 +1,4 @@
+import { getJobMatchScore } from "@/lib/actions/matching-actions";
 import { getJobById } from "@/lib/actions/job-actions";
 import { auth } from "@/lib/auth";
 import { notFound } from "next/navigation";
@@ -14,6 +15,7 @@ export default async function JobDetailPage({
 
   const session = await auth();
   const isCandidate = session?.user?.role === "CANDIDATE";
+  const matchData = isCandidate ? await getJobMatchScore(job.id) : null;
 
   return (
     <div className="job-detail">
@@ -49,6 +51,55 @@ export default async function JobDetailPage({
         ))}
       </div>
 
+      {matchData && (
+        <div className="match-card">
+          <div className="match-card-header">
+            <h3 className="match-card-title">Your Match Score</h3>
+            <span className="match-score-large">
+              {Math.round(matchData.total_score * 100)}%
+            </span>
+          </div>
+          <div className="match-card-bars">
+            <div className="match-bar-item">
+              <span className="match-bar-label">Semantic fit</span>
+              <div className="match-bar">
+                <div
+                  className="match-bar-fill"
+                  style={{ width: `${Math.round(matchData.semantic_score * 100)}%` }}
+                />
+              </div>
+              <span className="match-bar-value">
+                {Math.round(matchData.semantic_score * 100)}%
+              </span>
+            </div>
+            <div className="match-bar-item">
+              <span className="match-bar-label">Skill overlap</span>
+              <div className="match-bar">
+                <div
+                  className="match-bar-fill match-bar-fill-skills"
+                  style={{ width: `${Math.round(matchData.skill_overlap.overlap_score * 100)}%` }}
+                />
+              </div>
+              <span className="match-bar-value">
+                {matchData.skill_overlap.matched_count}/{matchData.skill_overlap.total_required}
+              </span>
+            </div>
+          </div>
+          {matchData.skill_overlap.missing_skills.length > 0 && (
+            <div className="match-missing">
+              <span className="match-missing-label">Skills to develop:</span>
+              <div className="job-detail-skills">
+                {matchData.skill_overlap.missing_skills.map((skill: string) => (
+                  <span key={skill} className="skill-tag skill-tag-missing">
+                    {skill}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="job-detail-description">
         <h2 className="section-title">About This Role</h2>
         <div className="prose">
@@ -57,7 +108,7 @@ export default async function JobDetailPage({
           ))}
         </div>
       </div>
-
+      
       <div className="job-detail-footer">
         <p className="job-detail-posted">
           Posted by {job.recruiter.name} ·{" "}

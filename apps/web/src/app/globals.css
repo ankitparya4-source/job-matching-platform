@@ -974,3 +974,251 @@ a:hover {
     flex-direction: column;
   }
 }
+/* Resume upload */
+
+.upload-section {
+  margin-bottom: 2rem;
+}
+
+.upload-zone {
+  border: 2px dashed var(--warm-border);
+  border-radius: var(--radius);
+  padding: 3rem 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  background: white;
+}
+
+.upload-zone:hover {
+  border-color: var(--sage-muted);
+  background: var(--sage-faint);
+}
+
+.upload-zone-active {
+  border-color: var(--sage);
+  background: var(--sage-faint);
+}
+
+.upload-zone-disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.upload-title {
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  color: var(--charcoal);
+  margin-bottom: 0.35rem;
+}
+
+.upload-hint {
+  color: var(--warm-gray);
+  font-size: 0.825rem;
+  margin-top: 0.25rem;
+}
+
+.upload-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--sage);
+}
+
+.upload-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--warm-border);
+  border-top-color: var(--sage);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Resume results */
+
+.resume-results {
+  margin-top: 1.5rem;
+}
+
+.skills-section {
+  margin-bottom: 1.25rem;
+}
+
+.skills-category {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--warm-gray);
+  margin-bottom: 0.5rem;
+}
+
+.skill-tag-soft {
+  background: var(--terracotta-faint);
+  color: var(--terracotta);
+}
+
+.education-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.education-item {
+  background: white;
+  border: 1px solid var(--warm-border);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  color: var(--charcoal-soft);
+}
+
+.contact-info {
+  background: white;
+  border: 1px solid var(--warm-border);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  color: var(--charcoal-soft);
+}
+
+.contact-info p {
+  margin-bottom: 0.25rem;
+}
+/* Match badges & scores */
+
+.match-badge {
+  background: rgba(45, 74, 62, 0.1);
+  color: var(--sage);
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.match-details {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.match-detail-item {
+  color: var(--sage);
+}
+
+.match-detail-missing {
+  color: var(--warm-gray);
+  font-style: italic;
+}
+
+.skill-tag-matched {
+  background: rgba(74, 124, 89, 0.12);
+  color: var(--success);
+  border: 1px solid rgba(74, 124, 89, 0.2);
+}
+
+.skill-tag-missing {
+  background: var(--terracotta-faint);
+  color: var(--terracotta);
+  border: 1px dashed rgba(196, 112, 75, 0.3);
+}
+
+.section-subtitle {
+  color: var(--warm-gray);
+  font-size: 0.875rem;
+  margin-top: -0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+/* Match card on job detail */
+
+.match-card {
+  background: white;
+  border: 1px solid var(--warm-border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.match-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+
+.match-card-title {
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
+  color: var(--charcoal);
+}
+
+.match-score-large {
+  font-family: var(--font-serif);
+  font-size: 1.75rem;
+  color: var(--sage);
+  font-weight: 700;
+}
+
+.match-card-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.match-bar-item {
+  display: grid;
+  grid-template-columns: 100px 1fr 50px;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.match-bar-label {
+  font-size: 0.825rem;
+  color: var(--warm-gray);
+}
+
+.match-bar {
+  height: 8px;
+  background: var(--cream-dark);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.match-bar-fill {
+  height: 100%;
+  background: var(--sage);
+  border-radius: 4px;
+  transition: width 0.6s ease;
+}
+
+.match-bar-fill-skills {
+  background: var(--terracotta);
+}
+
+.match-bar-value {
+  font-size: 0.8rem;
+  color: var(--charcoal-soft);
+  text-align: right;
+  font-weight: 500;
+}
+
+.match-missing {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--warm-border);
+}
+
+.match-missing-label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--warm-gray);
+  margin-bottom: 0.5rem;
+}
