@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getRecruiterJobs } from "@/lib/actions/job-actions";
 import { getCandidateApplications } from "@/lib/actions/application-actions";
 import Link from "next/link";
+import { prisma } from "@/lib/prisma";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -17,11 +18,28 @@ export default async function DashboardPage() {
 }
 
 async function RecruiterDashboard() {
+  const session = await auth();
+  if (!session?.user) return null;
+
   const jobs = await getRecruiterJobs();
 
   const totalJobs = jobs.length;
   const openJobs = jobs.filter((j) => j.status === "OPEN").length;
   const totalApplicants = jobs.reduce((sum, j) => sum + j._count.applications, 0);
+
+  const allApplications = await prisma.application.findMany({
+    where: { job: { recruiterId: session.user.id } },
+    select: { status: true },
+  });
+
+  const pipeline = {
+    applied: allApplications.filter((a) => a.status === "APPLIED").length,
+    inReview: allApplications.filter((a) =>
+      ["REVIEWED", "SHORTLISTED", "INTERVIEW"].includes(a.status)
+    ).length,
+    offered: allApplications.filter((a) => a.status === "OFFERED").length,
+    hired: allApplications.filter((a) => a.status === "HIRED").length,
+  };
 
   return (
     <div className="dashboard">
@@ -41,6 +59,27 @@ async function RecruiterDashboard() {
           <span className="stat-label">Total Applicants</span>
         </div>
       </div>
+
+      {totalApplicants > 0 && (
+        <div className="pipeline-bar">
+          <div className="pipeline-segment pipeline-applied">
+            <span className="pipeline-count">{pipeline.applied}</span>
+            <span className="pipeline-label">Applied</span>
+          </div>
+          <div className="pipeline-segment pipeline-review">
+            <span className="pipeline-count">{pipeline.inReview}</span>
+            <span className="pipeline-label">In Review</span>
+          </div>
+          <div className="pipeline-segment pipeline-offered">
+            <span className="pipeline-count">{pipeline.offered}</span>
+            <span className="pipeline-label">Offered</span>
+          </div>
+          <div className="pipeline-segment pipeline-hired">
+            <span className="pipeline-count">{pipeline.hired}</span>
+            <span className="pipeline-label">Hired</span>
+          </div>
+        </div>
+      )}
 
       <div className="section">
         <div className="section-header">

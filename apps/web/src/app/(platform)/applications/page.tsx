@@ -32,9 +32,16 @@ export default async function ApplicationsPage() {
           {applications.map((app) => (
             <div key={app.id} className="job-card">
               <div className="job-card-header">
-                <Link href={`/jobs/${app.job.id}`}>
-                  <h3 className="job-card-title">{app.job.title}</h3>
-                </Link>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                  <Link href={`/jobs/${app.job.id}`}>
+                    <h3 className="job-card-title">{app.job.title}</h3>
+                  </Link>
+                  {app.matchScore != null && (
+                    <span className="match-badge">
+                      {Math.round(app.matchScore * 100)}% match
+                    </span>
+                  )}
+                </div>
                 <span className={`status-badge status-${app.status.toLowerCase()}`}>
                   {app.status.replace("_", " ")}
                 </span>

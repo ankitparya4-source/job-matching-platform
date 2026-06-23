@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { ApplicationStatus } from "@prisma/client";
+import { getJobMatchScore } from "./matching-actions";
 
 export async function applyToJob(jobId: string, coverLetter?: string) {
   const session = await auth();
@@ -29,12 +30,27 @@ export async function applyToJob(jobId: string, coverLetter?: string) {
     throw new Error("You have already applied to this job");
   }
 
+  let matchScore: number | null = null;
+  let matchDetails: any = null;
+
+  try {
+    const match = await getJobMatchScore(jobId);
+    if (match) {
+      matchScore = match.total_score;
+      matchDetails = match;
+    }
+  } catch {
+    // Non-blocking — apply even if AI service is down
+  }
+
   await prisma.application.create({
     data: {
       candidateId: session.user.id,
       jobId,
       coverLetter: coverLetter || null,
       status: "APPLIED",
+      matchScore,
+      matchDetails,
     },
   });
 
