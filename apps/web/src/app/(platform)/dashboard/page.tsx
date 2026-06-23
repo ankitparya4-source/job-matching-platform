@@ -81,7 +81,6 @@ async function RecruiterDashboard() {
             <span className="pipeline-label">Hired</span>
           </div>
         </div>
-        </div>
       )}
 
       {interviews.length > 0 && (
