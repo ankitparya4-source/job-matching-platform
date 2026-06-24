@@ -4,8 +4,6 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
 
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || "http://localhost:8000";
 
@@ -24,21 +22,16 @@ export async function uploadResume(formData: FormData) {
     throw new Error("File must be under 10MB");
   }
 
-  // Save file locally
-  const uploadDir = join(process.cwd(), "uploads");
-  await mkdir(uploadDir, { recursive: true });
-
   const fileName = `${session.user.id}-${Date.now()}.pdf`;
-  const filePath = join(uploadDir, fileName);
-  const bytes = await file.arrayBuffer();
-  await writeFile(filePath, Buffer.from(bytes));
 
-  // Create or update resume record with PROCESSING status
+  // On Vercel, the filesystem is read-only. We no longer write files to disk.
+  // Instead we store just the file name as a reference and send the raw bytes
+  // directly to the AI service for parsing.
   const resume = await prisma.resume.upsert({
     where: { userId: session.user.id },
     update: {
       fileName: file.name,
-      filePath: filePath,
+      filePath: fileName,
       fileSize: file.size,
       status: "PROCESSING",
       rawText: null,
@@ -47,7 +40,7 @@ export async function uploadResume(formData: FormData) {
     create: {
       userId: session.user.id,
       fileName: file.name,
-      filePath: filePath,
+      filePath: fileName,
       fileSize: file.size,
       status: "PROCESSING",
     },
@@ -61,11 +54,18 @@ export async function uploadResume(formData: FormData) {
     const response = await fetch(`${AI_SERVICE_URL}/api/resume/parse`, {
       method: "POST",
       body: aiFormData,
+      signal: AbortSignal.timeout(120000), // 2 minute timeout
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || "AI service failed to parse resume");
+      let errorMessage = "AI service failed to parse resume";
+      try {
+        const error = await response.json();
+        errorMessage = error.detail || errorMessage;
+      } catch {
+        // response wasn't JSON
+      }
+      throw new Error(errorMessage);
     }
 
     const result = await response.json();
@@ -75,17 +75,16 @@ export async function uploadResume(formData: FormData) {
     await prisma.resume.update({
       where: { id: resume.id },
       data: {
-        rawText: parsed.raw_text,
+        rawText: parsed.raw_text || "",
         parsedData: parsed,
         status: "PARSED",
       },
     });
 
     // Create skill records
-    const allSkills = [
-      ...parsed.skills.technical,
-      ...parsed.skills.soft,
-    ];
+    const technicalSkills = parsed.skills?.technical || [];
+    const softSkills = parsed.skills?.soft || [];
+    const allSkills = [...technicalSkills, ...softSkills];
 
     // Clear existing resume skills
     await prisma.resumeSkill.deleteMany({
@@ -98,7 +97,7 @@ export async function uploadResume(formData: FormData) {
         update: {},
         create: {
           name: skillName.toLowerCase(),
-          category: parsed.skills.technical.includes(skillName)
+          category: technicalSkills.includes(skillName)
             ? "technical"
             : "soft",
         },
@@ -126,14 +125,19 @@ export async function uploadResume(formData: FormData) {
 
 export async function getResume() {
   const session = await auth();
-  if (!session?.user) throw new Error("Unauthorized");
+  if (!session?.user) return null;
 
-  return prisma.resume.findUnique({
-    where: { userId: session.user.id },
-    include: {
-      skills: {
-        include: { skill: true },
+  try {
+    return await prisma.resume.findUnique({
+      where: { userId: session.user.id },
+      include: {
+        skills: {
+          include: { skill: true },
+        },
       },
-    },
-  });
+    });
+  } catch {
+    return null;
+  }
 }
+

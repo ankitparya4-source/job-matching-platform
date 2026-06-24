@@ -22,8 +22,8 @@ export default async function PlatformLayout({
             JobMatch
           </Link>
           <NotificationBell
-            notifications={await getNotifications()}
-            unreadCount={await getUnreadCount()}
+            notifications={await getNotifications().catch(() => [])}
+            unreadCount={await getUnreadCount().catch(() => 0)}
           />
         </div>
 

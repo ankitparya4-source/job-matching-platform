@@ -22,8 +22,8 @@ async function RecruiterDashboard() {
   const session = await auth();
   if (!session?.user) return null;
 
-  const jobs = await getRecruiterJobs();
-  const interviews = await getUpcomingInterviews();
+  const jobs = await getRecruiterJobs().catch(() => [] as any[]);
+  const interviews = await getUpcomingInterviews().catch(() => [] as any[]);
 
   const totalJobs = jobs.length;
   const openJobs = jobs.filter((j) => j.status === "OPEN").length;
@@ -158,7 +158,7 @@ async function RecruiterDashboard() {
                   <span>{job._count.applications} applicant{job._count.applications !== 1 ? "s" : ""}</span>
                 </div>
                 <div className="job-card-skills">
-                  {job.skills.map((js) => (
+                  {job.skills.map((js: any) => (
                     <span key={js.skill.id} className="skill-tag">
                       {js.skill.name}
                     </span>
@@ -179,9 +179,9 @@ async function RecruiterDashboard() {
 }
 
 async function CandidateDashboard() {
-  const applications = await getCandidateApplications();
-  const recommendedJobs = await getRecommendedJobs();
-  const interviews = await getUpcomingInterviews();
+  const applications = await getCandidateApplications().catch(() => [] as any[]);
+  const recommendedJobs = await getRecommendedJobs().catch(() => []);
+  const interviews = await getUpcomingInterviews().catch(() => [] as any[]);
 
   const total = applications.length;
   const inReview = applications.filter((a) =>
