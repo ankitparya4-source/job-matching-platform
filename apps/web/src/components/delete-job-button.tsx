@@ -25,8 +25,8 @@ export function DeleteJobButton({ jobId }: { jobId: string }) {
         <button
           onClick={handleDelete}
           disabled={isDeleting}
-          className="btn-primary btn-sm bg-red-600 hover:bg-red-700 disabled:opacity-50"
-          style={{ backgroundColor: "var(--destructive)", color: "white" }}
+          className="btn-primary btn-sm"
+          style={{ backgroundColor: "#ef4444", color: "#ffffff", borderColor: "#ef4444" }}
         >
           {isDeleting ? "Deleting..." : "Yes, Delete"}
         </button>
