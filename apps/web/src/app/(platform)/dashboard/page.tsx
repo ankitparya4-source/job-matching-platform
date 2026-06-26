@@ -6,6 +6,7 @@ import { getCandidateApplications } from "@/lib/actions/application-actions";
 import { getUpcomingInterviews } from "@/lib/actions/interview-actions";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { DeleteJobButton } from "@/components/delete-job-button";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -164,10 +165,14 @@ async function RecruiterDashboard() {
                     </span>
                   ))}
                 </div>
-                <div className="job-card-actions">
-                  <Link href={`/applicants/${job.id}`} className="btn-secondary">
+                <div className="job-card-actions" style={{ display: "flex", gap: "1rem", marginTop: "1rem", alignItems: "center" }}>
+                  <Link href={`/applicants/${job.id}`} className="btn-secondary btn-sm">
                     View Applicants
                   </Link>
+                  <Link href={`/jobs/${job.id}/edit`} className="btn-secondary btn-sm">
+                    Edit Job
+                  </Link>
+                  <DeleteJobButton jobId={job.id} />
                 </div>
               </div>
             ))}

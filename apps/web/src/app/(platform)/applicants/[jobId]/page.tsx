@@ -131,6 +131,17 @@ export default async function ApplicantsPage({
                   {app.coverLetter && (
                     <p className="applicant-cover">{app.coverLetter}</p>
                   )}
+
+                  {app.candidate.resume?.rawText && (
+                    <details className="mt-4 border rounded-md overflow-hidden bg-white/50" style={{ marginTop: "1rem" }}>
+                      <summary className="p-3 bg-gray-50 cursor-pointer font-medium text-sm hover:bg-gray-100 transition-colors">
+                        View Candidate Resume (Parsed Text)
+                      </summary>
+                      <div className="p-4 text-xs font-mono whitespace-pre-wrap max-h-96 overflow-y-auto text-gray-700 bg-gray-50 border-t">
+                        {app.candidate.resume.rawText}
+                      </div>
+                    </details>
+                  )}
                 </div>
                 <div className="applicant-actions" style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                   <StatusUpdater applicationId={app.id} currentStatus={app.status} />

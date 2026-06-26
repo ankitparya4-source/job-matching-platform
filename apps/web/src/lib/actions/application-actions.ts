@@ -100,7 +100,14 @@ export async function getJobApplicants(jobId: string) {
   return prisma.application.findMany({
     where: { jobId },
     include: {
-      candidate: { select: { id: true, name: true, email: true } },
+      candidate: { 
+        select: { 
+          id: true, 
+          name: true, 
+          email: true,
+          resume: { select: { rawText: true, parsedData: true } }
+        } 
+      },
     },
     orderBy: { createdAt: "desc" },
   });

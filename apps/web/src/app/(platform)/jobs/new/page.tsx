@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { createJob } from "@/lib/actions/job-actions";
+import { SubmitButton } from "@/components/submit-button";
 
 export default async function NewJobPage() {
   const session = await auth();
@@ -82,9 +83,9 @@ export default async function NewJobPage() {
           />
         </div>
 
-        <button type="submit" className="btn-primary btn-lg" style={{ marginTop: "1.5rem" }}>
+        <SubmitButton pendingText="Publishing Job..." style={{ marginTop: "1.5rem" }}>
           Publish Job
-        </button>
+        </SubmitButton>
       </form>
     </div>
   );
